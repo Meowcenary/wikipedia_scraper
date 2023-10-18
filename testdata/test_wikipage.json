@@ -1,0 +1,17 @@
+[
+	{
+		"Url": "testing.com",
+		"Title": "Test Title",
+		"Text": "Example text that might be stored into a WikiPage struct. Not particularly interesting"
+	},
+	{
+		"Url": "testing_again.com",
+		"Title": "Another~Test~Title",
+		"Text": "Robotics is a very interesting field of study. The articles that are scraped in main have shown me this"
+	},
+	{
+		"Url": "testing_the_third.com",
+		"Title": "Third Test Title!!",
+		"Text": "Imagine having a third example of text to store into a WikiPage struct"
+	}
+]

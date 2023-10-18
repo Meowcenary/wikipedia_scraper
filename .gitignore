@@ -1,2 +1,4 @@
 wikipages.json
+wikipages.jl
+testdata/test_wikipage_write.json
 main

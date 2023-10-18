@@ -10,10 +10,10 @@ import (
 
 // Struct to hold scraped data
 type WikiPage struct {
-	Url string `json:"Url"`
-	Title string `json:"Title"`
-	Text string `json:"Text"`
-	Tags []string `json:"Tags"`
+	Url string `json:"url"`
+	Title string `json:"title"`
+	Text string `json:"text"`
+	Tags []string `json:"tags"`
 }
 
 // Constructor
@@ -27,41 +27,72 @@ func NewWikiPage(url string) *WikiPage {
 }
 
 // Read json created from scraper
-var pages []WikiPage
-func ReadWikiJson(filepath string) {
-	jsonFile, _ := os.Open(filepath)
+func ReadWikiJson(filepath string) ([]WikiPage, error) {
+	jsonFile, err := os.Open(filepath)
 	defer jsonFile.Close()
+
+	if err != nil {
+		return nil, err
+	}
+
 	dec := json.NewDecoder(jsonFile)
-	dec.Decode(&pages)
+	var pages []WikiPage
+	err = dec.Decode(&pages)
 
-	for _, page := range pages {
-		fmt.Println(page.Text)
-	}
+	return pages, err
 }
 
-func WriteWikiJson(filepath string, wikijson []WikiPage) {
-	file, _ := os.Create(filepath)
+// In general single line is preferred to save memory, but for
+// the assignment newline delimited json is set to default
+func WriteWikiJson(filepath string, wikijson []WikiPage, newlineDelim bool) error {
+	file, err := os.Create(filepath)
 	defer file.Close()
-	enc := json.NewEncoder(file)
-	// Using enc.Encode(wikijson) would write to single line, tihs separates records with newline chars
-	for _, record := range wikijson {
-		enc.Encode(record)
+
+	if err != nil {
+		return err
 	}
+
+	enc := json.NewEncoder(file)
+
+	if newlineDelim == true {
+		file.WriteString("[")
+
+		for _, record := range wikijson {
+			enc.Encode(record)
+
+			if err != nil {
+				break
+			}
+		}
+
+		// Remove last newline char and write ] char
+		file.Seek(-1, 1)
+		file.WriteString("]")
+	} else {
+		err = enc.Encode(wikijson)
+	}
+
+	return err
 }
 
-// Pointer to WikiPage object, used to work around passing arguments to callbacks
-var currentPage *WikiPage
 func ScrapeWikiUrls(urls []string) []WikiPage {
+	// Pointer to WikiPage object, used to work around passing arguments to callbacks
+	var currentPage *WikiPage
+	// Json of scraped wikipage data to return
+	var json []WikiPage
 	// Colly
 	wikiPageCollector := colly.NewCollector()
 	wikiPageCollector.OnRequest(func(r *colly.Request) {
 		fmt.Println("Visiting", r.URL)
 	})
-	wikiPageCollector.OnHTML("#firstHeading", scrapeElement)
+	wikiPageCollector.OnHTML("#firstHeading", func(e *colly.HTMLElement) {
+		currentPage.Title = fmt.Sprintf("%s", e.Text)
+	})
 	// "#mw-content-text" is taken from Python script "//div[@id="mw-content-text"]"
-	wikiPageCollector.OnHTML("#mw-content-text", scrapeElement)
+	wikiPageCollector.OnHTML("#mw-content-text", func(e *colly.HTMLElement) {
+		currentPage.Text = fmt.Sprintf("%s", e.Text)
+	})
 
-	json := []WikiPage{}
 	for _, url := range urls {
 		// Assign currentPage pointer to a new WikiPage struct
 		currentPage = NewWikiPage(url)
@@ -72,8 +103,4 @@ func ScrapeWikiUrls(urls []string) []WikiPage {
 	}
 
 	return json
-}
-
-func scrapeElement(e *colly.HTMLElement) {
-	currentPage.Title = fmt.Sprintf("%s", e.Text)
 }

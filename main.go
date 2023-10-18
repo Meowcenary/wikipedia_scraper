@@ -1,8 +1,13 @@
 package main
 
-import "github.com/Meowcenary/wikipedia_scraper/scraper"
+import (
+	"log"
+
+	"github.com/Meowcenary/wikipedia_scraper/scraper"
+)
 
 func main() {
+	log.Println("Starting...")
 	urls := []string{
 		"https://en.wikipedia.org/wiki/Robotics",
 		"https://en.wikipedia.org/wiki/Robot",
@@ -16,7 +21,13 @@ func main() {
     "https://en.wikipedia.org/wiki/Android_(robot)",
 	}
 	wikijson := scraper.ScrapeWikiUrls(urls)
-	filepath := "wikipages.json"
-	scraper.WriteWikiJson(filepath, wikijson)
-	scraper.ReadWikiJson(filepath)
+	filepath := "wikipages.jl"
+	newlineDelim := true
+	log.Printf("Done scraping, writing to file %s...\n", filepath)
+	err := scraper.WriteWikiJson(filepath, wikijson, newlineDelim)
+
+	if err != nil {
+		log.Fatalf("Error writing to file: %s", err)
+	}
+	log.Println("Done writing to file!")
 }
